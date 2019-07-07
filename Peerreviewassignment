@@ -1,1 +1,62 @@
+##Downloading data
+library(caret)
+library(randomForest)
+setwd("/Users/tingsiwang/Desktop/practical machine learning/peerreview")
+URL1 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+URL2 <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+filename1 <- "pml-training.csv"
+filename2 <- "pml-testing.csv"
+download.file(url=URL1, destfile=filename1,method="curl")
+download.file(url=URL2, destfile=filename2,method="curl")
+
+###remove variables containing NA valeus
+NA_Count = sapply(1:dim(training)[2],function(x)sum(is.na(training[,x])))
+NA_list = which(NA_Count>0)
+colnames(training[,c(1:7)])
+
+training = training[,-NA_list]
+training = training[,-c(1:7)]
+training$classe = factor(training$classe)
+
+###process testing dataset
+
+testing = testing[,-NA_list]
+testing = testing[,-c(1:7)]
+
+##try to fit a random forest model
+set.seed(1234)
+cv3 = trainControl(method="cv",number=3,allowParallel=TRUE,verboseIter=TRUE)
+modrf = train(classe~., data=training, method="rf",trControl=cv3)
+
+modtree = train(classe~.,data=training,method="rpart",trControl=cv3)
+
+##check the performance on the testing
+prf=predict(modrf,training)
+ptree=predict(modtree,training)
+table(prf,training$classe)
+
+table(ptree,training$classe)
+
+
+prf=predict(modrf,testing)
+ptree=predict(modtree,testing)
+table(prf,ptree)
+
+
+
+#########The result shows randon forest model has the best accuracy.
+
+######last, testing the project result
+
+
+solutions=predict(modrf,testing)
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+solutions
+
 
